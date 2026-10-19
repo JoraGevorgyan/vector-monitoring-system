@@ -69,5 +69,5 @@ Testing/
 
 # specific dirs
 .vscode/
-.clangd/
+.clangd
 
