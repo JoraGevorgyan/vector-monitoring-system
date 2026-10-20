@@ -132,9 +132,7 @@ Checks: >
   readability-identifier-naming,
   bugprone-assignment-in-if-condition,
   bugprone-unhandled-self-assignment,
-  misc-include-cleaner
 CheckOptions:
-  - {key: misc-include-cleaner.IgnoreHeaders,           value: ''}
   - {key: readability-identifier-naming.NamespaceCase,           value: camelBack}
   - {key: readability-identifier-naming.StructCase,           value: CamelCase}
   - {key: readability-identifier-naming.ClassCase,           value: CamelCase}
@@ -153,4 +151,3 @@ CheckOptions:
   - {key: readability-identifier-naming.StaticVariableCase,           value: lower_case}
   - {key: readability-identifier-naming.ParameterCase,           value: lower_case}
   - {key: readability-braces-around-statements.ShortStatementLines,           value: 0}
-
