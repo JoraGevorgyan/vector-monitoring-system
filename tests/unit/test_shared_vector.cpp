@@ -288,8 +288,7 @@ TEST(SharedVectorThreadSafety, ConcurrentReadersObserveSameValue)
 		threads.emplace_back([&] {
 			wait_for(go);
 			for (std::size_t i = 0; i < iterations; ++i) {
-				if (!has_magnitude(
-							SharedVector::instance().get_snapshot(), b_range)) {
+				if (!has_magnitude(SharedVector::instance().get_snapshot(), b_range)) {
 					mismatches.fetch_add(1, std::memory_order_relaxed);
 				}
 			}
