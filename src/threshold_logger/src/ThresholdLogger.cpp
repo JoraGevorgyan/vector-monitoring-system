@@ -43,7 +43,10 @@ void ThresholdLogger::start()
 void ThresholdLogger::stop()
 {
 	const std::lock_guard<std::mutex> lifecycle_lock(_lifecycle_mutex);
-	_is_running.store(false, std::memory_order_release);
+	{
+		const std::lock_guard<std::mutex> wait_lock(_wait_mutex);
+		_is_running.store(false, std::memory_order_release);
+	}
 	_wait_condition.notify_all();
 
 	if (_worker.joinable()) {
