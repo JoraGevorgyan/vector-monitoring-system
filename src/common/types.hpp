@@ -2,8 +2,7 @@
 
 #include <cstdint>
 
-namespace common
-{
+namespace common {
 
 using el_t = double;
 
