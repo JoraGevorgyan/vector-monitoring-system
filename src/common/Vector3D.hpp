@@ -6,7 +6,7 @@ using el_t = double;
 
 class Vector3D {
 public:
-	Vector3D() noexcept = default;
+	constexpr Vector3D() noexcept : _x{0.}, _y{0.}, _z{0.} {}
 
 	constexpr Vector3D(el_t x, el_t y, el_t z) noexcept : _x{x}, _y{y}, _z{z} {}
 
