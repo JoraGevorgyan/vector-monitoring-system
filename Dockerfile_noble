@@ -1,0 +1,17 @@
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends \
+		build-essential \
+		cmake \
+		ninja-build \
+		libgtest-dev \
+	&& rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+COPY . .
+RUN chmod +x run_tests.sh
+
+CMD ["./run_tests.sh"]
