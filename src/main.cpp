@@ -1,4 +1,7 @@
 #include <iostream>
+#include <system_error>
+
+#include "shared_vector/SharedVector.hpp"
 
 // void Vector3D::rand_init() noexcept
 // {
@@ -11,6 +14,13 @@
 
 int main()
 {
-	std::cout << "ping" << std::endl;
+	try {
+		concurrent::SharedVector::instance().update(0.0, 0.0, 0.0);
+	}
+	catch (const std::system_error& err) {
+		// std::mutex::lock may throw system_error
+		std::cerr << err.what() << std::endl;
+	}
+
 	return 0;
 }

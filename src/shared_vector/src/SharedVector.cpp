@@ -18,8 +18,7 @@ common::Vector3D SharedVector::get_snapshot() const noexcept
 	return _vector;
 }
 
-void SharedVector::update(
-	common::el_t x, common::el_t y, common::el_t z) noexcept
+void SharedVector::update(common::el_t x, common::el_t y, common::el_t z)
 {
 	const std::lock_guard<std::mutex> l(_m);
 	_vector = common::Vector3D(x, y, z);
