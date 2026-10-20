@@ -15,9 +15,9 @@ using concurrent::SharedVector;
 
 // Vector3D exposes only is_in_range(), so a vector is identified by its
 // magnitude. All magnitudes used here are exact in floating point.
-bool has_magnitude(const common::Vector3D& v, common::el_t magnitude)
+bool has_magnitude(const common::Vector3D& v, common::Range range)
 {
-	return v.is_in_range(magnitude, magnitude);
+	return v.is_in_range(range);
 }
 
 // Chosen so that mixing components of the two vectors (a torn read) never
@@ -25,12 +25,12 @@ bool has_magnitude(const common::Vector3D& v, common::el_t magnitude)
 constexpr common::el_t a_x = 3.;
 constexpr common::el_t a_y = 4.;
 constexpr common::el_t a_z = 0.;
-constexpr common::el_t a_magnitude = 5.;
+constexpr common::Range a_range{5, 5};
 
 constexpr common::el_t b_x = 2.;
 constexpr common::el_t b_y = 3.;
 constexpr common::el_t b_z = 6.;
-constexpr common::el_t b_magnitude = 7.;
+constexpr common::Range b_range{7, 7};
 
 constexpr std::size_t thread_count = 8;
 constexpr std::size_t iterations = 20000;
@@ -86,7 +86,7 @@ TEST(SharedVectorSingleton, StateIsSharedBetweenReferences)
 
 	first.update(a_x, a_y, a_z);
 
-	EXPECT_TRUE(has_magnitude(second.get_snapshot(), a_magnitude));
+	EXPECT_TRUE(has_magnitude(second.get_snapshot(), a_range));
 }
 
 TEST(SharedVectorSingleton, CannotBeCopiedOrMoved)
@@ -114,8 +114,8 @@ TEST(SharedVectorBehavior, SnapshotReflectsUpdate)
 	sv.update(a_x, a_y, a_z);
 
 	const common::Vector3D snapshot = sv.get_snapshot();
-	EXPECT_TRUE(has_magnitude(snapshot, a_magnitude));
-	EXPECT_FALSE(has_magnitude(snapshot, b_magnitude));
+	EXPECT_TRUE(has_magnitude(snapshot, a_range));
+	EXPECT_FALSE(has_magnitude(snapshot, b_range));
 }
 
 TEST(SharedVectorBehavior, LastUpdateWins)
@@ -126,8 +126,8 @@ TEST(SharedVectorBehavior, LastUpdateWins)
 	sv.update(b_x, b_y, b_z);
 
 	const common::Vector3D snapshot = sv.get_snapshot();
-	EXPECT_TRUE(has_magnitude(snapshot, b_magnitude));
-	EXPECT_FALSE(has_magnitude(snapshot, a_magnitude));
+	EXPECT_TRUE(has_magnitude(snapshot, b_range));
+	EXPECT_FALSE(has_magnitude(snapshot, a_range));
 }
 
 TEST(SharedVectorBehavior, SnapshotIsAnIndependentCopy)
@@ -138,8 +138,8 @@ TEST(SharedVectorBehavior, SnapshotIsAnIndependentCopy)
 	const common::Vector3D before = sv.get_snapshot();
 	sv.update(b_x, b_y, b_z);
 
-	EXPECT_TRUE(has_magnitude(before, a_magnitude));
-	EXPECT_TRUE(has_magnitude(sv.get_snapshot(), b_magnitude));
+	EXPECT_TRUE(has_magnitude(before, a_range));
+	EXPECT_TRUE(has_magnitude(sv.get_snapshot(), b_range));
 }
 
 TEST(SharedVectorBehavior, RepeatedSnapshotsAreEqual)
@@ -147,8 +147,8 @@ TEST(SharedVectorBehavior, RepeatedSnapshotsAreEqual)
 	SharedVector& sv = SharedVector::instance();
 	sv.update(b_x, b_y, b_z);
 
-	EXPECT_TRUE(has_magnitude(sv.get_snapshot(), b_magnitude));
-	EXPECT_TRUE(has_magnitude(sv.get_snapshot(), b_magnitude));
+	EXPECT_TRUE(has_magnitude(sv.get_snapshot(), b_range));
+	EXPECT_TRUE(has_magnitude(sv.get_snapshot(), b_range));
 }
 
 TEST(SharedVectorBehavior, SnapshotIsCallableThroughConstReference)
@@ -156,7 +156,7 @@ TEST(SharedVectorBehavior, SnapshotIsCallableThroughConstReference)
 	SharedVector::instance().update(a_x, a_y, a_z);
 	const SharedVector& csv = SharedVector::instance();
 
-	EXPECT_TRUE(has_magnitude(csv.get_snapshot(), a_magnitude));
+	EXPECT_TRUE(has_magnitude(csv.get_snapshot(), a_range));
 }
 
 TEST(SharedVectorBehavior, ZeroVector)
@@ -165,7 +165,7 @@ TEST(SharedVectorBehavior, ZeroVector)
 
 	sv.update(0., 0., 0.);
 
-	EXPECT_TRUE(has_magnitude(sv.get_snapshot(), 0.));
+	EXPECT_TRUE(has_magnitude(sv.get_snapshot(), {0, 0}));
 }
 
 TEST(SharedVectorBehavior, BoundaryValues)
@@ -173,13 +173,13 @@ TEST(SharedVectorBehavior, BoundaryValues)
 	SharedVector& sv = SharedVector::instance();
 
 	sv.update(100., 0., 0.);
-	EXPECT_TRUE(has_magnitude(sv.get_snapshot(), 100.));
+	EXPECT_TRUE(has_magnitude(sv.get_snapshot(), {100, 100}));
 
 	sv.update(0., 100., 0.);
-	EXPECT_TRUE(has_magnitude(sv.get_snapshot(), 100.));
+	EXPECT_TRUE(has_magnitude(sv.get_snapshot(), {100, 100}));
 
 	sv.update(0., 0., 100.);
-	EXPECT_TRUE(has_magnitude(sv.get_snapshot(), 100.));
+	EXPECT_TRUE(has_magnitude(sv.get_snapshot(), {100, 100}));
 }
 
 TEST(SharedVectorBehavior, RangeCheckOnSnapshot)
@@ -189,11 +189,11 @@ TEST(SharedVectorBehavior, RangeCheckOnSnapshot)
 
 	const common::Vector3D snapshot = sv.get_snapshot();
 
-	EXPECT_TRUE(snapshot.is_in_range(0., 10.));
-	EXPECT_TRUE(snapshot.is_in_range(5., 10.));
-	EXPECT_TRUE(snapshot.is_in_range(0., 5.));
-	EXPECT_FALSE(snapshot.is_in_range(5.1, 10.));
-	EXPECT_FALSE(snapshot.is_in_range(0., 4.9));
+	EXPECT_TRUE(snapshot.is_in_range({0, 10}));
+	EXPECT_TRUE(snapshot.is_in_range({5, 10}));
+	EXPECT_TRUE(snapshot.is_in_range({0, 5}));
+	EXPECT_FALSE(snapshot.is_in_range({6, 10}));
+	EXPECT_FALSE(snapshot.is_in_range({0, 4}));
 }
 
 // ---------------------------------------------------------------------------
@@ -230,7 +230,7 @@ TEST(SharedVectorThreadSafety, ReadersNeverSeeTornValues)
 			wait_for(go);
 			do {
 				const common::Vector3D s = SharedVector::instance().get_snapshot();
-				if (!has_magnitude(s, a_magnitude) && !has_magnitude(s, b_magnitude)) {
+				if (!has_magnitude(s, a_range) && !has_magnitude(s, b_range)) {
 					torn.fetch_add(1, std::memory_order_relaxed);
 				}
 				reads.fetch_add(1, std::memory_order_relaxed);
@@ -272,7 +272,7 @@ TEST(SharedVectorThreadSafety, ConcurrentWritersLeaveAWrittenValue)
 	}
 
 	const common::Vector3D s = SharedVector::instance().get_snapshot();
-	EXPECT_TRUE(has_magnitude(s, a_magnitude) || has_magnitude(s, b_magnitude));
+	EXPECT_TRUE(has_magnitude(s, a_range) || has_magnitude(s, b_range));
 }
 
 // With no writers, concurrent readers all observe the same value.
@@ -289,7 +289,7 @@ TEST(SharedVectorThreadSafety, ConcurrentReadersObserveSameValue)
 			wait_for(go);
 			for (std::size_t i = 0; i < iterations; ++i) {
 				if (!has_magnitude(
-							SharedVector::instance().get_snapshot(), b_magnitude)) {
+							SharedVector::instance().get_snapshot(), b_range)) {
 					mismatches.fetch_add(1, std::memory_order_relaxed);
 				}
 			}
@@ -317,7 +317,7 @@ TEST(SharedVectorThreadSafety, UpdateIsVisibleAfterSynchronization)
 			std::this_thread::yield();
 		}
 		visible.store(
-			has_magnitude(SharedVector::instance().get_snapshot(), b_magnitude));
+			has_magnitude(SharedVector::instance().get_snapshot(), b_range));
 	});
 	std::thread writer([&] {
 		SharedVector::instance().update(b_x, b_y, b_z);
