@@ -33,6 +33,18 @@
 			}
 		},
 		{
+			"name": "debug_test",
+			"displayName": "Debug Test",
+			"description": "Debug Test configuration",
+			"inherits": "mac_base",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Debug",
+				"ENABLE_CLANG_TIDY": "ON",
+				"BUILD_TESTS": "ON",
+				"ENABLE_CLANG_FORMAT_CHECK": "ON"
+			}
+		},
+		{
 			"name": "release",
 			"displayName": "Release",
 			"description": "Release configuration",

@@ -8,6 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 option(BUILD_TESTS "Build the test targets" OFF)
 option(ENABLE_CLANG_TIDY "Run clang-tidy during compilation" OFF)
 option(ENABLE_CLANG_FORMAT_CHECK "Check formatting during the build" OFF)
+option(ENABLE_COVERAGE "Instrument the code for coverage (gcov)" OFF)
 
 file(GLOB_RECURSE FORMAT_FILES CONFIGURE_DEPENDS
 	${CMAKE_SOURCE_DIR}/src/*.[ch]pp
@@ -59,6 +60,14 @@ target_include_directories(vm_lib PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(vm_lib PUBLIC Threads::Threads)
 
 target_compile_features(vm_lib PUBLIC cxx_std_17)
+
+if(ENABLE_COVERAGE)
+	if(MSVC)
+		message(FATAL_ERROR "ENABLE_COVERAGE is not supported with MSVC")
+	endif()
+	target_compile_options(vm_lib PUBLIC --coverage -O0 -g)
+	target_link_options(vm_lib PUBLIC --coverage)
+endif()
 
 if(MSVC)
 	target_compile_options(vm_lib PRIVATE /W4 /permissive-)
