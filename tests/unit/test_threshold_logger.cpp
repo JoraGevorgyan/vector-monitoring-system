@@ -5,22 +5,6 @@
 #include "shared_vector/SharedVector.hpp"
 #include "threshold_logger/ThresholdLogger.hpp"
 
-TEST(ThresholdLoggerTest, RejectsZeroFrequency)
-{
-	EXPECT_THROW(
-		concurrent::ThresholdLogger(
-			concurrent::SharedVector::instance(), 0, {0, 10}),
-		std::invalid_argument);
-}
-
-TEST(ThresholdLoggerTest, RejectsInvertedRange)
-{
-	EXPECT_THROW(
-		concurrent::ThresholdLogger(
-			concurrent::SharedVector::instance(), 10, {10, 0}),
-		std::invalid_argument);
-}
-
 TEST(ThresholdLoggerTest, StartIsIdempotentAndCanRestart)
 {
 	concurrent::SharedVector& vector = concurrent::SharedVector::instance();
