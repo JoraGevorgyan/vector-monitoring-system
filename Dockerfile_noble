@@ -6,8 +6,10 @@ RUN apt-get update \
 	&& apt-get install -y --no-install-recommends \
 		build-essential \
 		cmake \
+		gcovr \
 		ninja-build \
 		libgtest-dev \
+		clang-tidy \
 	&& rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace
