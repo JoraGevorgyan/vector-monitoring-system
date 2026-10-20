@@ -3,6 +3,7 @@
 #include <atomic>
 #include <cstddef>
 #include <thread>
+#include <type_traits>
 #include <vector>
 
 #include "common/Vector3D.hpp"
