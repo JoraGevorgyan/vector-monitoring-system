@@ -9,6 +9,7 @@ option(BUILD_TESTS "Build the test targets" OFF)
 option(ENABLE_CLANG_TIDY "Run clang-tidy during compilation" OFF)
 option(ENABLE_CLANG_FORMAT_CHECK "Check formatting during the build" OFF)
 option(ENABLE_COVERAGE "Instrument the code for coverage (gcov)" OFF)
+option(ENABLE_SANITIZERS "Enable ThreadSanitizer and UndefinedBehaviorSanitizer" OFF)
 
 file(GLOB_RECURSE FORMAT_FILES CONFIGURE_DEPENDS
 	${CMAKE_SOURCE_DIR}/src/*.[ch]pp
@@ -67,6 +68,14 @@ if(ENABLE_COVERAGE)
 	endif()
 	target_compile_options(vm_lib PUBLIC --coverage -O0 -g)
 	target_link_options(vm_lib PUBLIC --coverage)
+endif()
+
+if(ENABLE_SANITIZERS)
+	if(NOT CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
+		message(FATAL_ERROR "Sanitizers require a GCC- or Clang-compatible compiler")
+	endif()
+	target_compile_options(vm_lib PUBLIC -fsanitize=thread,undefined -fno-omit-frame-pointer)
+	target_link_options(vm_lib PUBLIC -fsanitize=thread,undefined)
 endif()
 
 if(MSVC)
