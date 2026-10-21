@@ -22,63 +22,35 @@ ThresholdLogger::~ThresholdLogger()
 
 void ThresholdLogger::start()
 {
-	const std::lock_guard<std::mutex> lifecycle_lock(_lifecycle_mutex);
-	if (_is_running.load(std::memory_order_acquire)) {
-		return;
-	}
-
-	if (_worker.joinable()) {
-		_worker.join();
-	}
-
-	_is_running.store(true, std::memory_order_release);
-	try {
-		_worker = std::thread(&ThresholdLogger::run, this);
-	}
-	catch (...) {
-		_is_running.store(false, std::memory_order_release);
-		throw;
+	if (!_is_running.load(std::memory_order_relaxed)) {
+		_is_running.store(true, std::memory_order_relaxed);
+		_runner = std::thread(&ThresholdLogger::run, this);
 	}
 }
 
 void ThresholdLogger::stop()
 {
-	const std::lock_guard<std::mutex> lifecycle_lock(_lifecycle_mutex);
-	{
-		const std::lock_guard<std::mutex> wait_lock(_wait_mutex);
-		_is_running.store(false, std::memory_order_release);
-	}
-	_wait_condition.notify_all();
-
-	if (_worker.joinable()) {
-		_worker.join();
+	if (_runner.joinable()) {
+		_is_running.store(false, std::memory_order_relaxed);
+		_runner.join();
 	}
 }
 
 void ThresholdLogger::run()
 {
-	const auto interval =
-		std::chrono::duration_cast<std::chrono::steady_clock::duration>(
-			std::chrono::duration<double>(1.0 / _frequency));
-	auto next_tick = std::chrono::steady_clock::now();
+	const auto sleep_period = std::chrono::milliseconds(1000'000 / _frequency);
+	auto next_shot = std::chrono::steady_clock::now();
 
-	while (_is_running.load(std::memory_order_acquire)) {
+	while (_is_running.load(std::memory_order_relaxed)) {
 		const auto snapshot = _vector.get_snapshot();
 		if (snapshot.is_in_range(_range)) {
 			print_stdout(snapshot);
 		}
-
-		next_tick += interval;
-		std::unique_lock<std::mutex> wait_lock(_wait_mutex);
-		if (_wait_condition.wait_until(wait_lock, next_tick, [this] {
-					return !_is_running.load(std::memory_order_acquire);
-				})) {
-			break;
+		next_shot += sleep_period;
+		if (next_shot < std::chrono::steady_clock::now()) {
+			next_shot = std::chrono::steady_clock::now();
 		}
-
-		if (next_tick < std::chrono::steady_clock::now()) {
-			next_tick = std::chrono::steady_clock::now();
-		}
+		std::this_thread::sleep_until(next_shot);
 	}
 }
 
