@@ -1,5 +1,7 @@
 #include "shared_vector/SharedVector.hpp"
 
+#include <mutex>
+
 #include "common/Vector3D.hpp"
 
 namespace concurrent {
