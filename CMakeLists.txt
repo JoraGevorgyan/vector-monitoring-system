@@ -14,7 +14,6 @@ option(ENABLE_INTEGRATION_TESTS "Build and register the integration test" OFF)
 
 file(GLOB_RECURSE FORMAT_FILES CONFIGURE_DEPENDS
 	${CMAKE_SOURCE_DIR}/src/*.[ch]pp
-	${CMAKE_SOURCE_DIR}/include/*.[ch]pp
 	${CMAKE_SOURCE_DIR}/tests/*.[ch]pp
 )
 

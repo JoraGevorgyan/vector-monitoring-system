@@ -1,8 +1,8 @@
 #include "threshold_logger/ThresholdLogger.hpp"
 
+#include <chrono>
 #include <iostream>
 #include <mutex>
-#include <stdexcept>
 
 #include "common/helpers.hpp"
 
