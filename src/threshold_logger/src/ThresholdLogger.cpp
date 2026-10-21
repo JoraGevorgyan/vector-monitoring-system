@@ -22,17 +22,23 @@ ThresholdLogger::~ThresholdLogger()
 
 void ThresholdLogger::start()
 {
-	if (!_is_running.load(std::memory_order_relaxed)) {
-		_is_running.store(true, std::memory_order_relaxed);
-		_runner = std::thread(&ThresholdLogger::run, this);
+	if (_is_running.load(std::memory_order_relaxed)) {
+		return;
 	}
+
+	if (_worker.joinable()) {
+		_worker.join();
+	}
+
+	_is_running.store(true, std::memory_order_release);
+	_worker = std::thread(&ThresholdLogger::run, this);
 }
 
 void ThresholdLogger::stop()
 {
-	if (_runner.joinable()) {
-		_is_running.store(false, std::memory_order_relaxed);
-		_runner.join();
+	_is_running.store(false, std::memory_order_release);
+	if (_worker.joinable()) {
+		_worker.join();
 	}
 }
 

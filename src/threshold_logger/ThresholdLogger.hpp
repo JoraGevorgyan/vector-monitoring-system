@@ -31,7 +31,7 @@ private:
 	const common::Range _range;
 	const std::uint16_t _frequency;
 	std::atomic<bool> _is_running{false};
-	std::thread _runner;
+	std::thread _worker;
 
 	static std::mutex _out_mutex;
 };
