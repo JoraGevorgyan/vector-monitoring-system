@@ -2,6 +2,7 @@
 #include <charconv>
 #include <chrono>
 #include <cstdint>
+#include <exception>
 #include <iostream>
 #include <memory>
 #include <random>
@@ -95,20 +96,27 @@ int main(int argc, char* argv[])
 
 		funny::for_each_member(updaters, &concurrent::Updater::start);
 		funny::for_each_member(loggers, &concurrent::ThresholdLogger::start);
-		
+
 		std::this_thread::sleep_until(deadline);
 
 		funny::for_each_member(updaters, &concurrent::Updater::stop);
 		funny::for_each_member(loggers, &concurrent::ThresholdLogger::stop);
 	}
 	catch (const std::system_error& err) {
-		// std::mutex::lock may throw system_error
 		std::cerr << err.what() << std::endl;
 		return 1;
 	}
 	catch (const std::invalid_argument& err) {
 		std::cerr << err.what() << std::endl;
 		return 2;
+	}
+	catch (const std::exception& err) {
+		std::cerr << "Unexpected error: " << err.what() << std::endl;
+		return 1;
+	}
+	catch (...) {
+		std::cerr << "Unknown error occurred." << std::endl;
+		return 1;
 	}
 
 	return 0;
