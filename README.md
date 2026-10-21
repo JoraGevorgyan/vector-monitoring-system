@@ -29,7 +29,7 @@ podman build -f Dockerfile_noble -t vm-tests .
 podman run --rm vm-tests
 # optional
 podman run --rm vm-tests ./run_tests.sh INTEGRATION
-podman run --rm vm-tests ./run_tests.sh SANITIZER
+podman run --rm vm-tests ./run_tests.sh SANITIZER # may fail because of false positives
 ```
 
 The image is based on Ubuntu 24.04 (noble) and installs the build
