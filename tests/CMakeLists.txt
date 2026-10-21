@@ -16,3 +16,15 @@ if(INTEGRATION_TEST_SOURCES)
 	target_include_directories(integration_tests PRIVATE ${CMAKE_SOURCE_DIR}/include)
 	add_test(NAME integration_tests COMMAND integration_tests)
 endif()
+
+if(ENABLE_INTEGRATION_TESTS)
+	find_package(Python3 COMPONENTS Interpreter REQUIRED)
+	add_test(
+		NAME program_integration
+		COMMAND
+			${Python3_EXECUTABLE}
+			${CMAKE_CURRENT_SOURCE_DIR}/integration/test_program.py
+			$<TARGET_FILE:vector_monitoring>
+	)
+	set_tests_properties(program_integration PROPERTIES TIMEOUT 20)
+endif()

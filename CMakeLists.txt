@@ -10,6 +10,7 @@ option(ENABLE_CLANG_TIDY "Run clang-tidy during compilation" OFF)
 option(ENABLE_CLANG_FORMAT_CHECK "Check formatting during the build" OFF)
 option(ENABLE_COVERAGE "Instrument the code for coverage (gcov)" OFF)
 option(ENABLE_SANITIZERS "Enable ThreadSanitizer and UndefinedBehaviorSanitizer" OFF)
+option(ENABLE_INTEGRATION_TESTS "Build and register the integration test" OFF)
 
 file(GLOB_RECURSE FORMAT_FILES CONFIGURE_DEPENDS
 	${CMAKE_SOURCE_DIR}/src/*.[ch]pp
