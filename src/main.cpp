@@ -10,6 +10,7 @@
 #include <system_error>
 #include <thread>
 
+#include "common/funny_generic.hpp"
 #include "shared_vector/SharedVector.hpp"
 #include "threshold_logger/ThresholdLogger.hpp"
 #include "updater/Updater.hpp"
@@ -33,8 +34,7 @@ std::uint16_t random_frequency(
 common::Range random_range(std::mt19937& engine)
 {
 	const auto left = std::uniform_int_distribution<int>{1, 179}(engine);
-	const auto right =
-		std::uniform_int_distribution<int>{left + 20, 200}(engine);
+	const auto right = std::uniform_int_distribution<int>{left + 20, 200}(engine);
 	return {static_cast<std::uint8_t>(left), static_cast<std::uint8_t>(right)};
 }
 
@@ -74,40 +74,32 @@ int main(int argc, char* argv[])
 		std::random_device random_device;
 		std::mt19937 engine{random_device()};
 
-		auto& vector = concurrent::SharedVector::instance();
+		auto& sh_vector = concurrent::SharedVector::instance();
 		std::array<std::unique_ptr<concurrent::Updater>, g_updater_count> updaters;
 		std::array<std::unique_ptr<concurrent::ThresholdLogger>, g_logger_count>
 			loggers;
 
 		for (auto& updater : updaters) {
 			updater = std::make_unique<concurrent::Updater>(
-				vector,
+				sh_vector,
 				random_frequency(
 					engine, g_minimum_update_frequency, g_maximum_update_frequency));
 		}
 		for (auto& logger : loggers) {
 			logger = std::make_unique<concurrent::ThresholdLogger>(
-				vector,
+				sh_vector,
 				random_frequency(
 					engine, g_minimum_log_frequency, g_maximum_log_frequency),
 				random_range(engine));
 		}
 
-		for (auto& updater : updaters) {
-			updater->start();
-		}
-		for (auto& logger : loggers) {
-			logger->start();
-		}
-
+		funny::for_each_member(updaters, &concurrent::Updater::start);
+		funny::for_each_member(loggers, &concurrent::ThresholdLogger::start);
+		
 		std::this_thread::sleep_until(deadline);
 
-		for (auto& updater : updaters) {
-			updater->stop();
-		}
-		for (auto& logger : loggers) {
-			logger->stop();
-		}
+		funny::for_each_member(updaters, &concurrent::Updater::stop);
+		funny::for_each_member(loggers, &concurrent::ThresholdLogger::stop);
 	}
 	catch (const std::system_error& err) {
 		// std::mutex::lock may throw system_error
