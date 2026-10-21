@@ -3,6 +3,8 @@
 #include <chrono>
 #include <iostream>
 #include <mutex>
+#include <sstream>
+#include <string>
 
 #include "common/helpers.hpp"
 
@@ -23,16 +25,10 @@ ThresholdLogger::~ThresholdLogger()
 
 void ThresholdLogger::start()
 {
-	if (_is_running.load(std::memory_order_relaxed)) {
-		return;
+	if (!_is_running.load(std::memory_order_relaxed)) {
+		_is_running.store(true, std::memory_order_relaxed);
+		_worker = std::thread(&ThresholdLogger::run, this);
 	}
-
-	if (_worker.joinable()) {
-		_worker.join();
-	}
-
-	_is_running.store(true, std::memory_order_relaxed);
-	_worker = std::thread(&ThresholdLogger::run, this);
 }
 
 void ThresholdLogger::stop()
@@ -63,8 +59,12 @@ void ThresholdLogger::run()
 
 void ThresholdLogger::print_stdout(const common::Vector3D& snapshot) const
 {
+	std::ostringstream line;
+	line << _range << " : " << snapshot << '\n';
+	const std::string text = line.str();
+
 	const std::lock_guard<std::mutex> output_lock(_out_mutex);
-	std::cout << _range << " : " << snapshot << "\n";
+	std::cout.write(text.data(), static_cast<std::streamsize>(text.size()));
 }
 
 } // namespace concurrent
