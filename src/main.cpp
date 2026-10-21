@@ -16,32 +16,32 @@
 
 namespace {
 
-constexpr std::uint16_t k_logger_count = 5;
-constexpr std::uint16_t k_updater_count = 2;
-constexpr std::uint16_t k_minimum_log_frequency = 1000;
-constexpr std::uint16_t k_maximum_log_frequency = 10000;
-constexpr std::uint16_t k_minimum_update_frequency = 10;
-constexpr std::uint16_t k_maximum_update_frequency = 100;
-constexpr std::uint16_t k_maximum_runtime_ms = 60000;
+constexpr std::uint16_t g_logger_count = 5;
+constexpr std::uint16_t g_updater_count = 2;
+constexpr std::uint16_t g_minimum_log_frequency = 1000;
+constexpr std::uint16_t g_maximum_log_frequency = 10'000;
+constexpr std::uint16_t g_minimum_update_frequency = 10;
+constexpr std::uint16_t g_maximum_update_frequency = 100;
+constexpr std::uint16_t g_maximum_runtime_ms = 60'000;
 
 std::uint16_t random_frequency(
-	std::mt19937& engine, std::uint16_t minimum, std::uint16_t maximum)
+	std::mt19937& engine, std::uint16_t min, std::uint16_t max)
 {
-	return std::uniform_int_distribution<std::uint16_t>{minimum, maximum}(engine);
+	return std::uniform_int_distribution<std::uint16_t>{min, max}(engine);
 }
 
 common::Range random_range(std::mt19937& engine)
 {
-	const auto left = std::uniform_int_distribution<unsigned int>{1, 180}(engine);
+	const auto left = std::uniform_int_distribution<int>{1, 179}(engine);
 	const auto right =
-		std::uniform_int_distribution<unsigned int>{left + 20, 200}(engine);
+		std::uniform_int_distribution<int>{left + 20, 200}(engine);
 	return {static_cast<std::uint8_t>(left), static_cast<std::uint8_t>(right)};
 }
 
 std::chrono::milliseconds parse_runtime(int argc, char* argv[])
 {
 	if (argc == 1) {
-		return std::chrono::milliseconds{k_maximum_runtime_ms};
+		return std::chrono::milliseconds{g_maximum_runtime_ms};
 	}
 
 	if (argc != 3 || std::string_view{argv[1]} != "--duration-ms") {
@@ -56,7 +56,7 @@ std::chrono::milliseconds parse_runtime(int argc, char* argv[])
 	if (
 		result.ec != std::errc{} ||
 		result.ptr != argument.data() + argument.size() || duration_ms == 0 ||
-		duration_ms > k_maximum_runtime_ms) {
+		duration_ms > g_maximum_runtime_ms) {
 		throw std::invalid_argument{
 			"duration must be an integer from 1 to 60000 ms"};
 	}
@@ -75,21 +75,21 @@ int main(int argc, char* argv[])
 		std::mt19937 engine{random_device()};
 
 		auto& vector = concurrent::SharedVector::instance();
-		std::array<std::unique_ptr<concurrent::Updater>, k_updater_count> updaters;
-		std::array<std::unique_ptr<concurrent::ThresholdLogger>, k_logger_count>
+		std::array<std::unique_ptr<concurrent::Updater>, g_updater_count> updaters;
+		std::array<std::unique_ptr<concurrent::ThresholdLogger>, g_logger_count>
 			loggers;
 
 		for (auto& updater : updaters) {
 			updater = std::make_unique<concurrent::Updater>(
 				vector,
 				random_frequency(
-					engine, k_minimum_update_frequency, k_maximum_update_frequency));
+					engine, g_minimum_update_frequency, g_maximum_update_frequency));
 		}
 		for (auto& logger : loggers) {
 			logger = std::make_unique<concurrent::ThresholdLogger>(
 				vector,
 				random_frequency(
-					engine, k_minimum_log_frequency, k_maximum_log_frequency),
+					engine, g_minimum_log_frequency, g_maximum_log_frequency),
 				random_range(engine));
 		}
 
