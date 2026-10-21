@@ -18,19 +18,13 @@ Updater::~Updater() noexcept
 
 void Updater::start()
 {
-	if (_is_running.load(std::memory_order_relaxed)) {
-		return;
+	if (!_is_running.load(std::memory_order_relaxed)) {
+		std::random_device random_device;
+		_random_engine.seed(random_device());
+
+		_is_running.store(true, std::memory_order_relaxed);
+		_worker = std::thread(&Updater::run, this);
 	}
-
-	if (_worker.joinable()) {
-		_worker.join();
-	}
-
-	std::random_device random_device;
-	_random_engine.seed(random_device());
-
-	_is_running.store(true, std::memory_order_relaxed);
-	_worker = std::thread(&Updater::run, this);
 }
 
 void Updater::stop()
