@@ -29,9 +29,6 @@ private:
 	SharedVector& _vector;
 	const std::uint16_t _frequency;
 	std::atomic<bool> _is_running{false};
-	std::mutex _lifecycle_mutex;
-	std::mutex _wait_mutex;
-	std::condition_variable _wait_condition;
 	std::thread _worker;
 	std::mt19937 _random_engine{};
 };
