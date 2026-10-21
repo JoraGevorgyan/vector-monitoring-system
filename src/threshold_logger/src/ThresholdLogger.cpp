@@ -6,8 +6,6 @@
 
 namespace concurrent {
 
-std::mutex ThresholdLogger::_out_mutex;
-
 ThresholdLogger::ThresholdLogger(
 	const SharedVector& vector, std::uint16_t frequency, common::Range range)
 	: _vector{vector}, _range{range}, _frequency{frequency}

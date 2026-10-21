@@ -33,10 +33,9 @@ private:
 	std::atomic<bool> _is_running{false};
 	std::mutex _lifecycle_mutex;
 	std::mutex _wait_mutex;
+	mutable std::mutex _out_mutex;
 	std::condition_variable _wait_condition;
 	std::thread _worker;
-
-	static std::mutex _out_mutex;
 };
 
 } // namespace concurrent
