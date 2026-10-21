@@ -1,6 +1,6 @@
 #pragma once
 
-#include <mutex>
+#include <shared_mutex>
 
 #include "common/Vector3D.hpp"
 
@@ -23,7 +23,7 @@ private:
 	~SharedVector() = default;
 
 	common::Vector3D _vector;
-	mutable std::mutex _m;
+	mutable std::shared_mutex _sh_mutex;
 };
 
 } // namespace concurrent
