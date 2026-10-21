@@ -23,7 +23,7 @@ if(ENABLE_INTEGRATION_TESTS)
 		NAME program_integration
 		COMMAND
 			${Python3_EXECUTABLE}
-			${CMAKE_CURRENT_SOURCE_DIR}/integration/test_program.py
+			${CMAKE_CURRENT_SOURCE_DIR}/integration/test_main.py
 			$<TARGET_FILE:vector_monitoring>
 	)
 	set_tests_properties(program_integration PROPERTIES TIMEOUT 20)

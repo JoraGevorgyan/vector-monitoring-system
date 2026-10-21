@@ -17,7 +17,7 @@ def main() -> int:
     executable = Path(sys.argv[1])
     with tempfile.TemporaryFile(mode="w+t") as output:
         result = subprocess.run(
-            [str(executable), "--duration-ms", "5000"],
+            [str(executable), "--duration-ms", "5900"],
             stdout=output,
             stderr=subprocess.PIPE,
             text=True,
