@@ -27,13 +27,13 @@ void Updater::start()
 	std::random_device random_device;
 	_random_engine.seed(random_device());
 
-	_is_running.store(true, std::memory_order_release);
+	_is_running.store(true, std::memory_order_relaxed);
 	_worker = std::thread(&Updater::run, this);
 }
 
 void Updater::stop()
 {
-	_is_running.store(false, std::memory_order_release);
+	_is_running.store(false, std::memory_order_relaxed);
 	if (_worker.joinable()) {
 		_worker.join();
 	}

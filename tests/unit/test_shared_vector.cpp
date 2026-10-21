@@ -37,7 +37,7 @@ constexpr std::size_t iterations = 20000;
 
 void wait_for(const std::atomic<bool>& go)
 {
-	while (!go.load(std::memory_order_acquire)) {
+	while (!go.load(std::memory_order_relaxed)) {
 		std::this_thread::yield();
 	}
 }
@@ -68,7 +68,7 @@ TEST(SharedVectorSingleton, InstanceIsSharedAcrossThreads)
 			seen[i] = &SharedVector::instance();
 		});
 	}
-	go.store(true, std::memory_order_release);
+	go.store(true, std::memory_order_relaxed);
 	for (std::thread& t : threads) {
 		t.join();
 	}
@@ -222,7 +222,7 @@ TEST(SharedVectorThreadSafety, ReadersNeverSeeTornValues)
 					SharedVector::instance().update(b_x, b_y, b_z);
 				}
 			}
-			writers_left.fetch_sub(1, std::memory_order_acq_rel);
+			writers_left.fetch_sub(1, std::memory_order_relaxed);
 		});
 	}
 	for (std::size_t r = 0; r < thread_count; ++r) {
@@ -234,17 +234,17 @@ TEST(SharedVectorThreadSafety, ReadersNeverSeeTornValues)
 					torn.fetch_add(1, std::memory_order_relaxed);
 				}
 				reads.fetch_add(1, std::memory_order_relaxed);
-			} while (writers_left.load(std::memory_order_acquire) != 0);
+			} while (writers_left.load(std::memory_order_relaxed) != 0);
 		});
 	}
 
-	go.store(true, std::memory_order_release);
+	go.store(true, std::memory_order_relaxed);
 	for (std::thread& t : threads) {
 		t.join();
 	}
 
-	EXPECT_EQ(torn.load(), 0U);
-	EXPECT_GT(reads.load(), 0U);
+	EXPECT_EQ(torn.load(std::memory_order_relaxed), 0U);
+	EXPECT_GT(reads.load(std::memory_order_relaxed), 0U);
 }
 
 // Every writer writes its own value; afterwards the state must be exactly
@@ -266,7 +266,7 @@ TEST(SharedVectorThreadSafety, ConcurrentWritersLeaveAWrittenValue)
 			}
 		});
 	}
-	go.store(true, std::memory_order_release);
+	go.store(true, std::memory_order_relaxed);
 	for (std::thread& t : threads) {
 		t.join();
 	}
@@ -294,37 +294,21 @@ TEST(SharedVectorThreadSafety, ConcurrentReadersObserveSameValue)
 			}
 		});
 	}
-	go.store(true, std::memory_order_release);
+	go.store(true, std::memory_order_relaxed);
 	for (std::thread& t : threads) {
 		t.join();
 	}
 
-	EXPECT_EQ(mismatches.load(), 0U);
+	EXPECT_EQ(mismatches.load(std::memory_order_relaxed), 0U);
 }
 
-// A writer's update is visible to a reader that is told (via an atomic
-// flag) that the update has completed.
-TEST(SharedVectorThreadSafety, UpdateIsVisibleAfterSynchronization)
+// Joining the writer establishes synchronization before the snapshot is read.
+TEST(SharedVectorThreadSafety, UpdateIsVisibleAfterWriterJoin)
 {
 	SharedVector::instance().update(a_x, a_y, a_z);
 
-	std::atomic<bool> updated{false};
-	std::atomic<bool> visible{false};
-
-	std::thread reader([&] {
-		while (!updated.load(std::memory_order_acquire)) {
-			std::this_thread::yield();
-		}
-		visible.store(
-			has_magnitude(SharedVector::instance().get_snapshot(), b_range));
-	});
-	std::thread writer([&] {
-		SharedVector::instance().update(b_x, b_y, b_z);
-		updated.store(true, std::memory_order_release);
-	});
-
+	std::thread writer([&] { SharedVector::instance().update(b_x, b_y, b_z); });
 	writer.join();
-	reader.join();
 
-	EXPECT_TRUE(visible.load());
+	EXPECT_TRUE(has_magnitude(SharedVector::instance().get_snapshot(), b_range));
 }

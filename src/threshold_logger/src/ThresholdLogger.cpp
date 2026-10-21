@@ -30,13 +30,13 @@ void ThresholdLogger::start()
 		_worker.join();
 	}
 
-	_is_running.store(true, std::memory_order_release);
+	_is_running.store(true, std::memory_order_relaxed);
 	_worker = std::thread(&ThresholdLogger::run, this);
 }
 
 void ThresholdLogger::stop()
 {
-	_is_running.store(false, std::memory_order_release);
+	_is_running.store(false, std::memory_order_relaxed);
 	if (_worker.joinable()) {
 		_worker.join();
 	}
