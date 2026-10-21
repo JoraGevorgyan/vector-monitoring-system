@@ -34,6 +34,9 @@ constexpr common::Range b_range{7, 7};
 
 constexpr std::size_t thread_count = 8;
 constexpr std::size_t iterations = 20000;
+constexpr std::size_t writer_count = 2;
+constexpr std::size_t reader_count = 6;
+constexpr std::size_t mixed_access_iterations = 2000;
 
 void wait_for(const std::atomic<bool>& go)
 {
@@ -207,34 +210,32 @@ TEST(SharedVectorThreadSafety, ReadersNeverSeeTornValues)
 	SharedVector::instance().update(a_x, a_y, a_z);
 
 	std::atomic<bool> go{false};
-	std::atomic<std::size_t> writers_left{thread_count};
 	std::atomic<std::size_t> torn{0};
 	std::atomic<std::size_t> reads{0};
 	std::vector<std::thread> threads;
 
-	for (std::size_t w = 0; w < thread_count; ++w) {
+	for (std::size_t w = 0; w < writer_count; ++w) {
 		threads.emplace_back([&, w] {
 			wait_for(go);
-			for (std::size_t i = 0; i < iterations; ++i) {
+			for (std::size_t i = 0; i < mixed_access_iterations; ++i) {
 				if (((i + w) % 2) == 0) {
 					SharedVector::instance().update(a_x, a_y, a_z);
 				} else {
 					SharedVector::instance().update(b_x, b_y, b_z);
 				}
 			}
-			writers_left.fetch_sub(1, std::memory_order_relaxed);
 		});
 	}
-	for (std::size_t r = 0; r < thread_count; ++r) {
+	for (std::size_t r = 0; r < reader_count; ++r) {
 		threads.emplace_back([&] {
 			wait_for(go);
-			do {
+			for (std::size_t i = 0; i < mixed_access_iterations; ++i) {
 				const common::Vector3D s = SharedVector::instance().get_snapshot();
 				if (!has_magnitude(s, a_range) && !has_magnitude(s, b_range)) {
 					torn.fetch_add(1, std::memory_order_relaxed);
 				}
-				reads.fetch_add(1, std::memory_order_relaxed);
-			} while (writers_left.load(std::memory_order_relaxed) != 0);
+			}
+			reads.fetch_add(mixed_access_iterations, std::memory_order_relaxed);
 		});
 	}
 
@@ -244,7 +245,9 @@ TEST(SharedVectorThreadSafety, ReadersNeverSeeTornValues)
 	}
 
 	EXPECT_EQ(torn.load(std::memory_order_relaxed), 0U);
-	EXPECT_GT(reads.load(std::memory_order_relaxed), 0U);
+	EXPECT_EQ(
+		reads.load(std::memory_order_relaxed),
+		reader_count * mixed_access_iterations);
 }
 
 // Every writer writes its own value; afterwards the state must be exactly
