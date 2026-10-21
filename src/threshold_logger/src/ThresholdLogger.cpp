@@ -1,9 +1,10 @@
 #include "threshold_logger/ThresholdLogger.hpp"
 
-#include <chrono>
 #include <iostream>
 #include <mutex>
 #include <stdexcept>
+
+#include "common/helpers.hpp"
 
 namespace concurrent {
 
@@ -44,7 +45,7 @@ void ThresholdLogger::stop()
 
 void ThresholdLogger::run()
 {
-	const auto sleep_period = std::chrono::milliseconds(1000'000 / _frequency);
+	const auto sleep_period = common::get_sleep_period(_frequency);
 	auto next_shot = std::chrono::steady_clock::now();
 
 	while (_is_running.load(std::memory_order_relaxed)) {
